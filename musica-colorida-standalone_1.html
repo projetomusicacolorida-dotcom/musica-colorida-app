@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Música Colorida — Gestão de Alunos</title>
+<script src="https://accounts.google.com/gsi/client" async defer onload="window.__gisLoaded()"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --mc-bg:#FBF6EC; --mc-surface:#FFFFFF; --mc-ink:#2A2438; --mc-ink-soft:#7A7286;
+  --mc-border:#EFE7D8; --mc-border-strong:#E3D9C4;
+  --mc-primary:#E2574C; --mc-primary-dark:#C8453B;
+  --mc-secondary:#2F8F84; --mc-secondary-bg:#E2F1EF;
+  --mc-tertiary:#F2B134; --mc-tertiary-ink:#8A6310; --mc-tertiary-bg:#FCEFD2;
+  --mc-purple:#7B6FA8;
+  --mc-success:#3F9142; --mc-success-bg:#E7F4E8;
+  --mc-warning:#C97D02; --mc-warning-bg:#FBF0DC;
+  --mc-danger:#B83227; --mc-danger-bg:#FBE7E4;
+}
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box;}
+body{margin:0;background:var(--mc-bg);color:var(--mc-ink);font-family:'Inter',sans-serif;}
+.mc-app{max-width:1080px;margin:0 auto;padding:0 0 60px;}
+.mc-center-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;}
+.mc-spin{animation:mc-spin 1s linear infinite;width:28px;height:28px;border:3px solid var(--mc-border-strong);border-top-color:var(--mc-primary);border-radius:50%;}
+@keyframes mc-spin{to{transform:rotate(360deg);}}
+.mc-setup-box{max-width:480px;background:var(--mc-surface);border:1px solid var(--mc-border);border-radius:16px;padding:26px;text-align:left;}
+.mc-setup-box h2{font-family:'Fredoka',sans-serif;margin-top:0;}
+.mc-setup-box ol{padding-left:20px;line-height:1.7;font-size:14px;}
+.mc-setup-box code{background:var(--mc-bg);border:1px solid var(--mc-border-strong);padding:2px 6px;border-radius:6px;font-size:12.5px;}
+.mc-signin-card{background:var(--mc-surface);border:1px solid var(--mc-border);border-radius:18px;padding:36px;max-width:380px;}
+.mc-signin-card h1{font-family:'Fredoka',sans-serif;font-size:22px;margin:14px 0 4px;}
+.mc-signin-card p{color:var(--mc-ink-soft);font-size:14px;margin:0 0 22px;}
+.mc-brand-icon{width:52px;height:52px;border-radius:14px;background:var(--mc-primary);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 4px;}
+.mc-header{padding:24px 24px 0;}
+.mc-header-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.mc-brand{display:flex;align-items:center;gap:14px;}
+.mc-brand .mc-brand-icon{width:44px;height:44px;border-radius:12px;margin:0;font-size:20px;}
+.mc-brand h1{font-family:'Fredoka',sans-serif;font-size:22px;font-weight:700;margin:0;}
+.mc-brand p{margin:2px 0 0;font-size:13px;color:var(--mc-ink-soft);}
+.mc-header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.mc-sync-status{font-size:12px;color:var(--mc-ink-soft);display:flex;align-items:center;gap:6px;}
+.mc-sync-dot{width:8px;height:8px;border-radius:50%;background:var(--mc-success);flex-shrink:0;}
+.mc-sync-dot.saving{background:var(--mc-warning);}
+.mc-wave{width:100%;height:24px;display:block;margin:6px 0 4px;}
+.mc-tabs{display:flex;gap:6px;padding:4px 24px 16px;overflow-x:auto;}
+.mc-tab{display:flex;align-items:center;gap:6px;padding:9px 16px;border-radius:999px;border:1px solid var(--mc-border-strong);background:var(--mc-surface);color:var(--mc-ink-soft);font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;cursor:pointer;white-space:nowrap;}
+.mc-tab.active{background:var(--mc-primary);border-color:var(--mc-primary);color:#fff;}
+.mc-content{padding:4px 24px 0;}
+.mc-stack{display:flex;flex-direction:column;gap:18px;}
+.mc-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;}
+.mc-stat-card{background:var(--mc-surface);border:1px solid var(--mc-border);border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px;}
+.mc-stat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px;color:#fff;}
+.mc-stat-value{font-family:'Fredoka',sans-serif;font-size:19px;font-weight:700;line-height:1.2;}
+.mc-stat-label{font-size:12.5px;color:var(--mc-ink-soft);margin-top:1px;}
+.mc-two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media (max-width:720px){.mc-two-col{grid-template-columns:1fr;}}
+.mc-card{background:var(--mc-surface);border:1px solid var(--mc-border);border-radius:14px;padding:18px;}
+.mc-card-title{font-family:'Fredoka',sans-serif;font-size:15px;font-weight:600;margin:0 0 14px;display:flex;align-items:center;gap:8px;}
+.mc-section-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;}
+.mc-section-title{font-family:'Fredoka',sans-serif;font-size:16px;font-weight:600;margin:0;}
+.mc-search{display:flex;align-items:center;gap:8px;background:var(--mc-surface);border:1px solid var(--mc-border-strong);border-radius:10px;padding:8px 12px;flex:1;min-width:180px;color:var(--mc-ink-soft);}
+.mc-search input{border:none;outline:none;background:transparent;font:inherit;flex:1;color:var(--mc-ink);}
+.mc-select-inline,.mc-field select,.mc-field input,.mc-field textarea{border:1px solid var(--mc-border-strong);border-radius:9px;padding:9px 11px;font:inherit;color:var(--mc-ink);background:var(--mc-surface);outline:none;}
+.mc-select-inline{cursor:pointer;}
+.mc-btn{display:inline-flex;align-items:center;gap:6px;border-radius:10px;padding:10px 16px;font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;cursor:pointer;border:1px solid transparent;white-space:nowrap;}
+.mc-btn-primary{background:var(--mc-primary);color:#fff;}
+.mc-btn-ghost{background:var(--mc-surface);border-color:var(--mc-border-strong);color:var(--mc-ink);}
+.mc-btn-danger{background:var(--mc-danger);color:#fff;}
+.mc-btn-small{padding:6px 11px;font-size:12.5px;}
+.mc-icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--mc-border-strong);background:var(--mc-surface);color:var(--mc-ink-soft);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;}
+.mc-icon-btn-danger:hover{background:var(--mc-danger-bg);color:var(--mc-danger);border-color:var(--mc-danger);}
+.mc-row-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end;}
+.mc-badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700;}
+.mc-table-wrap{overflow-x:auto;border:1px solid var(--mc-border);border-radius:14px;background:var(--mc-surface);}
+.mc-table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px;}
+.mc-table th{text-align:left;padding:12px 14px;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--mc-ink-soft);border-bottom:1px solid var(--mc-border);font-weight:700;}
+.mc-table td{padding:12px 14px;border-bottom:1px solid var(--mc-border);vertical-align:middle;}
+.mc-table tr:last-child td{border-bottom:none;}
+.mc-mini-sub{font-size:12px;color:var(--mc-ink-soft);display:block;}
+.mc-mini-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+.mc-mini-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--mc-border);border-radius:10px;}
+.mc-mini-actions{display:flex;align-items:center;gap:10px;}
+.mc-mini-amount{font-weight:700;font-size:13px;}
+.mc-chip-row{display:flex;flex-wrap:wrap;gap:5px;}
+.mc-chip{font-size:11.5px;background:var(--mc-bg);border:1px solid var(--mc-border-strong);padding:3px 9px;border-radius:999px;}
+.mc-empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:44px 20px;color:var(--mc-ink-soft);border:1px dashed var(--mc-border-strong);border-radius:14px;background:var(--mc-surface);}
+.mc-empty-title{font-weight:700;color:var(--mc-ink);margin:4px 0 0;font-size:14px;}
+.mc-empty-hint{font-size:12.5px;margin:0;max-width:320px;}
+.mc-turma-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;}
+.mc-turma-card{background:var(--mc-surface);border:1px solid var(--mc-border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;}
+.mc-turma-card-top{display:flex;gap:6px;}
+.mc-turma-card h4{font-family:'Fredoka',sans-serif;font-size:16px;margin:2px 0 0;}
+.mc-turma-meta{display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:var(--mc-ink-soft);}
+.mc-turma-bottom{display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;}
+.mc-turma-price{font-weight:700;font-size:15px;}
+.mc-turma-actions{display:flex;align-items:center;gap:6px;margin-top:6px;}
+.mc-turma-actions .mc-btn-ghost{flex:1;justify-content:center;}
+.mc-payments-controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px;}
+.mc-payments-summary{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;margin-left:auto;color:var(--mc-ink-soft);}
+.mc-modal-overlay{position:fixed;inset:0;background:rgba(42,36,56,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50;}
+.mc-modal{background:var(--mc-surface);border-radius:16px;width:100%;max-width:460px;max-height:86vh;overflow-y:auto;}
+.mc-modal-wide{max-width:560px;}
+.mc-modal-small{max-width:360px;}
+.mc-modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--mc-border);}
+.mc-modal-header h3{font-family:'Fredoka',sans-serif;font-size:16px;margin:0;}
+.mc-modal-body{padding:20px;}
+.mc-confirm-body{display:flex;flex-direction:column;align-items:center;text-align:center;}
+.mc-confirm-body p{font-size:14px;margin:12px 0 18px;}
+.mc-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.mc-field-wide{grid-column:1 / -1;}
+.mc-field{display:flex;flex-direction:column;gap:5px;}
+.mc-field label{font-size:12px;font-weight:700;color:var(--mc-ink-soft);}
+.mc-form-error{background:var(--mc-danger-bg);color:var(--mc-danger);padding:10px 12px;border-radius:9px;font-size:13px;margin-bottom:14px;}
+.mc-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+.mc-checklist{display:flex;flex-direction:column;gap:8px;max-height:160px;overflow-y:auto;border:1px solid var(--mc-border);border-radius:10px;padding:10px;}
+.mc-checklist-tall{max-height:320px;}
+.mc-checkitem{display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;}
+.mc-checkitem input{accent-color:var(--mc-primary);width:16px;height:16px;}
+.mc-checkitem-disabled{opacity:.5;cursor:not-allowed;}
+.mc-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--mc-ink);color:#fff;padding:11px 20px;border-radius:999px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.18);z-index:60;}
+.mc-row-hidden{display:none !important;}
+@media (max-width:560px){.mc-form-grid{grid-template-columns:1fr;}.mc-payments-summary{margin-left:0;}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ================================================================ */
+/* CONFIGURAÇÃO — substitui pelo teu Client ID do Google Cloud      */
+/* ================================================================ */
+const GOOGLE_CLIENT_ID = "COLOCA_AQUI_O_TEU_CLIENT_ID.apps.googleusercontent.com";
+const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+const DATA_FILENAME = "musica-colorida-dados.json";
+
+/* ================================================================ */
+/* Estado global                                                     */
+/* ================================================================ */
+const state = {
+  students: [], turmas: [], payments: [],
+  tab: "dashboard",
+  signedIn: false,
+  loadingData: false,
+  saving: false,
+  syncError: "",
+  selectedMonth: currentMonthStr(),
+  paymentFilter: "todos",
+};
+let accessToken = null;
+let tokenClient = null;
+let gisReady = false;
+let driveFileId = null;
+let pendingDelete = null; // {type, id, label}
+let modal = null; // {type: 'student'|'turma'|'enroll'|'confirm', payload}
+let saveTimer = null;
+let toastTimer = null;
+
+window.__gisLoaded = function () {
+  gisReady = true;
+  if (!isConfigured()) return;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: DRIVE_SCOPE,
+    callback: onTokenReceived,
+  });
+};
+
+function isConfigured() {
+  return GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID.indexOf("COLOCA_AQUI") === -1;
+}
+
+/* ================================================================ */
+/* Helpers                                                            */
+/* ================================================================ */
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function currentMonthStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }
+function formatMonth(mes) {
+  if (!mes) return "—";
+  const [y, m] = mes.split("-").map(Number);
+  const d = new Date(y, m - 1, 1);
+  const s = d.toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function formatCurrency(v) { return new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(Number(v) || 0); }
+function formatDate(iso) { if (!iso) return "—"; return new Date(iso).toLocaleDateString("pt-PT"); }
+function effectiveStatus(p) { if (p.estado === "pago") return "pago"; return p.mes < currentMonthStr() ? "atrasado" : "pendente"; }
+const STATUS_META = {
+  pago: { label: "Pago", color: "var(--mc-success)", bg: "var(--mc-success-bg)" },
+  pendente: { label: "Pendente", color: "var(--mc-warning)", bg: "var(--mc-warning-bg)" },
+  atrasado: { label: "Em atraso", color: "var(--mc-danger)", bg: "var(--mc-danger-bg)" },
+};
+function escapeHtml(str) {
+  return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function getStudent(id) { return state.students.find((s) => s.id === id); }
+function getTurma(id) { return state.turmas.find((t) => t.id === id); }
+function notify(msg) {
+  state.toast = msg;
+  renderToast();
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { state.toast = ""; renderToast(); }, 2600);
+}
+
+/* ================================================================ */
+/* Google Sign-in                                                    */
+/* ================================================================ */
+function doSignIn() {
+  if (!tokenClient) { notify("A carregar o login da Google, tenta novamente em 1 segundo."); return; }
+  tokenClient.requestAccessToken({ prompt: "consent" });
+}
+function onTokenReceived(resp) {
+  if (resp.error) { notify("Não foi possível ligar ao Google: " + resp.error); return; }
+  accessToken = resp.access_token;
+  state.signedIn = true;
+  state.loadingData = true;
+  renderApp();
+  loadFromDrive().then(() => {
+    state.loadingData = false;
+    renderApp();
+  }).catch((e) => {
+    state.loadingData = false;
+    state.syncError = "Não foi possível carregar os dados do Drive. " + e.message;
+    renderApp();
+  });
+}
+function doSignOut() {
+  if (accessToken) {
+    google.accounts.oauth2.revoke(accessToken, () => {});
+  }
+  accessToken = null;
+  driveFileId = null;
+  state.signedIn = false;
+  state.students = []; state.turmas = []; state.payments = [];
+  renderApp();
+}
+
+/* ================================================================ */
+/* Google Drive — leitura/escrita do ficheiro de dados                */
+/* ================================================================ */
+async function driveFetch(url, options) {
+  options = options || {};
+  options.headers = Object.assign({}, options.headers, { Authorization: "Bearer " + accessToken });
+  let res = await fetch(url, options);
+  if (res.status === 401) {
+    const refreshed = await silentReauth();
+    if (refreshed) {
+      options.headers.Authorization = "Bearer " + accessToken;
+      res = await fetch(url, options);
+    }
+  }
+  return res;
+}
+function silentReauth() {
+  return new Promise((resolve) => {
+    if (!tokenClient) { resolve(false); return; }
+    const prevCallback = onTokenReceived;
+    tokenClient.callback = (resp) => {
+      tokenClient.callback = prevCallback;
+      if (resp.error) { resolve(false); return; }
+      accessToken = resp.access_token;
+      resolve(true);
+    };
+    try { tokenClient.requestAccessToken({ prompt: "" }); } catch (e) { resolve(false); }
+  });
+}
+async function findDataFile() {
+  const q = encodeURIComponent(`name='${DATA_FILENAME}' and trashed=false`);
+  const res = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&spaces=drive`);
+  const data = await res.json();
+  return data.files && data.files.length ? data.files[0].id : null;
+}
+async function createDataFile(content) {
+  const boundary = "musica_colorida_boundary";
+  const metadata = { name: DATA_FILENAME, mimeType: "application/json" };
+  const body =
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n` +
+    `--${boundary}\r\nContent-Type: application/json\r\n\r\n${content}\r\n--${boundary}--`;
+  const res = await driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id", {
+    method: "POST",
+    headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
+    body,
+  });
+  const data = await res.json();
+  return data.id;
+}
+async function updateDataFile(fileId, content) {
+  await driveFetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: content,
+  });
+}
+async function getFileContent(fileId) {
+  const res = await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
+  return await res.text();
+}
+async function loadFromDrive() {
+  driveFileId = await findDataFile();
+  if (driveFileId) {
+    const text = await getFileContent(driveFileId);
+    try {
+      const parsed = JSON.parse(text);
+      state.students = parsed.students || [];
+      state.turmas = parsed.turmas || [];
+      state.payments = parsed.payments || [];
+    } catch (e) { /* ficheiro vazio ou corrompido — começa do zero */ }
+  } else {
+    const initial = JSON.stringify({ students: [], turmas: [], payments: [] });
+    driveFileId = await createDataFile(initial);
+  }
+}
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  state.saving = true;
+  renderSyncStatus();
+  saveTimer = setTimeout(saveToDrive, 700);
+}
+async function saveToDrive() {
+  try {
+    const payload = JSON.stringify({ students: state.students, turmas: state.turmas, payments: state.payments });
+    if (!driveFileId) { driveFileId = await createDataFile(payload); }
+    else { await updateDataFile(driveFileId, payload); }
+    state.syncError = "";
+  } catch (e) {
+    state.syncError = "Falha ao guardar no Drive.";
+  }
+  state.saving = false;
+  renderSyncStatus();
+}
+
+/* ================================================================ */
+/* CRUD — Alunos                                                     */
+/* ================================================================ */
+function openStudentModal(id) {
+  const existing = id ? getStudent(id) : null;
+  modal = { type: "student", editId: id || null, data: existing ? { ...existing } : { nome: "", dataNascimento: "", encarregado: "", telefone: "", email: "", notas: "", ativo: true, turmaIds: [] }, error: "" };
+  renderModal();
+}
+function saveStudentFromForm() {
+  const nome = document.getElementById("f-nome").value.trim();
+  if (!nome) { modal.error = "O nome do aluno é obrigatório."; renderModal(); return; }
+  const turmaIds = Array.from(document.querySelectorAll("[data-turma-checkbox]:checked")).map((el) => el.dataset.turmaId);
+  const form = {
+    nome,
+    dataNascimento: document.getElementById("f-dataNascimento").value,
+    encarregado: document.getElementById("f-encarregado").value.trim(),
+    telefone: document.getElementById("f-telefone").value.trim(),
+    email: document.getElementById("f-email").value.trim(),
+    notas: document.getElementById("f-notas").value.trim(),
+    ativo: document.getElementById("f-ativo").checked,
+    turmaIds,
+  };
+  if (modal.editId) {
+    state.students = state.students.map((s) => (s.id === modal.editId ? { ...s, ...form } : s));
+    notify("Aluno atualizado.");
+  } else {
+    state.students.push({ ...form, id: genId() });
+    notify("Aluno adicionado.");
+  }
+  closeModal();
+  renderContent();
+  scheduleSave();
+}
+function deleteStudentConfirmed(id) {
+  state.students = state.students.filter((s) => s.id !== id);
+  notify("Aluno eliminado.");
+}
+
+/* ================================================================ */
+/* CRUD — Turmas / Aulas                                             */
+/* ================================================================ */
+function openTurmaModal(id) {
+  const existing = id ? getTurma(id) : null;
+  modal = { type: "turma", editId: id || null, data: existing ? { ...existing } : { nome: "", tipo: "turma", instrumento: "", professor: "", diaHora: "", local: "", mensalidade: "", capacidade: "", ativo: true }, error: "" };
+  renderModal();
+}
+function saveTurmaFromForm() {
+  const nome = document.getElementById("f-t-nome").value.trim();
+  if (!nome) { modal.error = "O nome da turma/aula é obrigatório."; renderModal(); return; }
+  const form = {
+    nome,
+    tipo: document.getElementById("f-t-tipo").value,
+    instrumento: document.getElementById("f-t-instrumento").value.trim(),
+    professor: document.getElementById("f-t-professor").value.trim(),
+    diaHora: document.getElementById("f-t-diaHora").value.trim(),
+    local: document.getElementById("f-t-local").value.trim(),
+    mensalidade: Number(document.getElementById("f-t-mensalidade").value) || 0,
+    capacidade: document.getElementById("f-t-capacidade") ? (document.getElementById("f-t-capacidade").value ? Number(document.getElementById("f-t-capacidade").value) : "") : "",
+    ativo: document.getElementById("f-t-ativo").checked,
+  };
+  if (modal.editId) {
+    state.turmas = state.turmas.map((t) => (t.id === modal.editId ? { ...t, ...form } : t));
+    notify("Turma/aula atualizada.");
+  } else {
+    state.turmas.push({ ...form, id: genId() });
+    notify("Turma/aula criada.");
+  }
+  closeModal();
+  renderContent();
+  scheduleSave();
+}
+function deleteTurmaConfirmed(id) {
+  state.turmas = state.turmas.filter((t) => t.id !== id);
+  state.students = state.students.map((s) => ({ ...s, turmaIds: (s.turmaIds || []).filter((tid) => tid !== id) }));
+  notify("Turma/aula eliminada.");
+}
+function openEnrollModal(turmaId) {
+  modal = { type: "enroll", turmaId };
+  renderModal();
+}
+function toggleEnrollment(studentId, turmaId) {
+  state.students = state.students.map((s) => {
+    if (s.id !== studentId) return s;
+    const has = (s.turmaIds || []).includes(turmaId);
+    return { ...s, turmaIds: has ? s.turmaIds.filter((t) => t !== turmaId) : [...(s.turmaIds || []), turmaId] };
+  });
+  renderModal();
+  renderContent();
+  scheduleSave();
+}
+
+/* ================================================================ */
+/* Pagamentos                                                         */
+/* ================================================================ */
+function generatePayments() {
+  const mes = document.getElementById("month-select").value;
+  const newPayments = [];
+  state.students.forEach((st) => {
+    (st.turmaIds || []).forEach((tid) => {
+      const turma = getTurma(tid);
+      if (!turma) return;
+      const exists = state.payments.some((p) => p.alunoId === st.id && p.turmaId === tid && p.mes === mes);
+      if (!exists) newPayments.push({ id: genId(), alunoId: st.id, turmaId: tid, mes, valor: Number(turma.mensalidade) || 0, estado: "pendente", dataPagamento: null, metodo: "" });
+    });
+  });
+  if (newPayments.length) { state.payments.push(...newPayments); notify(`${newPayments.length} pagamento(s) gerado(s) para ${formatMonth(mes)}.`); }
+  else { notify("Não há novos pagamentos para gerar neste mês."); }
+  state.selectedMonth = mes;
+  renderContent();
+  scheduleSave();
+}
+function markPaid(id) {
+  state.payments = state.payments.map((p) => (p.id === id ? { ...p, estado: "pago", dataPagamento: new Date().toISOString() } : p));
+  renderContent(); scheduleSave();
+}
+function markPending(id) {
+  state.payments = state.payments.map((p) => (p.id === id ? { ...p, estado: "pendente", dataPagamento: null } : p));
+  renderContent(); scheduleSave();
+}
+function deletePaymentConfirmed(id) {
+  state.payments = state.payments.filter((p) => p.id !== id);
+  notify("Registo de pagamento eliminado.");
+}
+
+/* ================================================================ */
+/* Eliminar com confirmação                                           */
+/* ================================================================ */
+function askConfirmDelete(type, id, label) {
+  pendingDelete = { type, id, label };
+  modal = { type: "confirm" };
+  renderModal();
+}
+function performConfirmedDelete() {
+  if (!pendingDelete) return;
+  if (pendingDelete.type === "student") deleteStudentConfirmed(pendingDelete.id);
+  else if (pendingDelete.type === "turma") deleteTurmaConfirmed(pendingDelete.id);
+  else if (pendingDelete.type === "payment") deletePaymentConfirmed(pendingDelete.id);
+  pendingDelete = null;
+  closeModal();
+  renderContent();
+  scheduleSave();
+}
+function closeModal() { modal = null; renderModal(); }
+
+/* ================================================================ */
+/* Exportar para Excel                                                */
+/* ================================================================ */
+function exportToExcel() {
+  const alunosData = state.students.map((s) => ({
+    "Nome": s.nome, "Data de Nascimento": s.dataNascimento || "", "Encarregado de Educação": s.encarregado || "",
+    "Telefone": s.telefone || "", "Email": s.email || "",
+    "Turmas / Aulas": (s.turmaIds || []).map((id) => { const t = getTurma(id); return t ? t.nome : null; }).filter(Boolean).join(", "),
+    "Estado": s.ativo === false ? "Inativo" : "Ativo", "Notas": s.notas || "",
+  }));
+  const turmasData = state.turmas.map((t) => {
+    const inscritos = state.students.filter((s) => (s.turmaIds || []).includes(t.id)).length;
+    return {
+      "Nome": t.nome, "Tipo": t.tipo === "turma" ? "Turma" : "Aula individual", "Instrumento / Foco": t.instrumento || "",
+      "Professor(a)": t.professor || "", "Dia / Hora": t.diaHora || "", "Local": t.local || "",
+      "Mensalidade (€)": Number(t.mensalidade) || 0, "Capacidade": t.tipo === "turma" ? (t.capacidade || "") : "",
+      "Alunos Inscritos": inscritos, "Estado": t.ativo === false ? "Inativa" : "Ativa",
+    };
+  });
+  const pagamentosData = [...state.payments].sort((a, b) => (a.mes < b.mes ? 1 : -1)).map((p) => {
+    const st = getStudent(p.alunoId); const tu = getTurma(p.turmaId); const status = effectiveStatus(p);
+    return {
+      "Aluno": st ? st.nome : "Aluno removido", "Turma / Aula": tu ? tu.nome : "—", "Mês": formatMonth(p.mes),
+      "Valor (€)": Number(p.valor) || 0, "Estado": STATUS_META[status].label,
+      "Data de Pagamento": p.dataPagamento ? formatDate(p.dataPagamento) : "", "Método": p.metodo || "",
+    };
+  });
+  const wb = XLSX.utils.book_new();
+  const wsA = XLSX.utils.json_to_sheet(alunosData.length ? alunosData : [{ "Nome": "" }]);
+  const wsT = XLSX.utils.json_to_sheet(turmasData.length ? turmasData : [{ "Nome": "" }]);
+  const wsP = XLSX.utils.json_to_sheet(pagamentosData.length ? pagamentosData : [{ "Aluno": "" }]);
+  XLSX.utils.book_append_sheet(wb, wsA, "Alunos");
+  XLSX.utils.book_append_sheet(wb, wsT, "Turmas e Aulas");
+  XLSX.utils.book_append_sheet(wb, wsP, "Pagamentos");
+  XLSX.writeFile(wb, `musica-colorida-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  notify("Ficheiro Excel exportado.");
+}
+
+/* ================================================================ */
+/* Render — shell, tabs                                               */
+/* ================================================================ */
+function setTab(tab) { state.tab = tab; renderShellNav(); renderContent(); }
+
+function renderApp() {
+  const app = document.getElementById("app");
+  if (!isConfigured()) { app.innerHTML = renderSetupNeeded(); return; }
+  if (!state.signedIn) { app.innerHTML = renderSignIn(); attachSignInHandlers(); return; }
+  if (state.loadingData) { app.innerHTML = renderLoadingScreen(); return; }
+  app.innerHTML = renderShell();
+  attachAppHandlers();
+  renderContent();
+}
+
+function renderSetupNeeded() {
+  return `<div class="mc-center-screen">
+    <div class="mc-setup-box">
+      <h2>🎵 Configuração necessária</h2>
+      <p>Antes de usar esta app, precisas de criar uma credencial Google gratuita para ligar ao teu Drive.</p>
+      <ol>
+        <li>Vai a <code>console.cloud.google.com</code> e cria um novo projeto.</li>
+        <li>Ativa a <strong>Google Drive API</strong> (menu "APIs e serviços").</li>
+        <li>Configura o ecrã de consentimento OAuth (tipo "Externo", só precisas do básico).</li>
+        <li>Cria uma credencial do tipo <strong>"ID de cliente OAuth"</strong> → "Aplicação Web".</li>
+        <li>Em "Origens JavaScript autorizadas", adiciona o URL onde vais alojar este ficheiro.</li>
+        <li>Copia o "Client ID" gerado e cola-o na constante <code>GOOGLE_CLIENT_ID</code> no topo deste ficheiro.</li>
+      </ol>
+    </div>
+  </div>`;
+}
+
+function renderLoadingScreen() {
+  return `<div class="mc-center-screen"><div class="mc-spin"></div><p>A carregar dados do Drive…</p></div>`;
+}
+
+function renderSignIn() {
+  return `<div class="mc-center-screen">
+    <div class="mc-signin-card">
+      <div class="mc-brand-icon">🎵</div>
+      <h1>Música Colorida</h1>
+      <p>Gestão de Alunos &amp; Pagamentos — os teus dados ficam guardados no teu próprio Google Drive.</p>
+      <button class="mc-btn mc-btn-primary" id="btn-signin" style="width:100%;justify-content:center;">Ligar ao Google Drive</button>
+    </div>
+  </div>`;
+}
+function attachSignInHandlers() {
+  const btn = document.getElementById("btn-signin");
+  if (btn) btn.addEventListener("click", doSignIn);
+}
+
+function renderShell() {
+  return `
+    <div class="mc-app">
+      <header class="mc-header">
+        <div class="mc-header-row">
+          <div class="mc-brand">
+            <div class="mc-brand-icon">🎵</div>
+            <div><h1>Música Colorida</h1><p>Gestão de Alunos &amp; Pagamentos</p></div>
+          </div>
+          <div class="mc-header-actions">
+            <span id="sync-status" class="mc-sync-status"></span>
+            <button class="mc-btn mc-btn-ghost mc-btn-small" data-action="export-excel">⬇ Exportar para Excel</button>
+            <button class="mc-btn mc-btn-ghost mc-btn-small" data-action="sign-out">Terminar sessão</button>
+          </div>
+        </div>
+      </header>
+      <svg class="mc-wave" viewBox="0 0 800 40" preserveAspectRatio="none">
+        <path d="M0,20 C50,2 100,38 150,20 C200,2 250,38 300,20 C350,2 400,38 450,20 C500,2 550,38 600,20 C650,2 700,38 750,20 C780,12 800,20 800,20" fill="none" stroke="var(--mc-border-strong)" stroke-width="2"/>
+        <circle cx="75" cy="10" r="5" fill="var(--mc-primary)"/><circle cx="225" cy="30" r="5" fill="var(--mc-secondary)"/>
+        <circle cx="375" cy="10" r="5" fill="var(--mc-tertiary)"/><circle cx="525" cy="30" r="5" fill="var(--mc-purple)"/>
+        <circle cx="675" cy="10" r="5" fill="var(--mc-primary)"/>
+      </svg>
+      <nav class="mc-tabs" id="tabs"></nav>
+      <main class="mc-content"><div id="content"></div></main>
+    </div>
+    <div id="modal-root"></div>
+    <div id="toast-root"></div>
+  `;
+}
+
+function renderShellNav() {
+  const tabs = [
+    { id: "dashboard", label: "Dashboard" },
+    { id: "alunos", label: "Alunos" },
+    { id: "turmas", label: "Turmas & Aulas" },
+    { id: "pagamentos", label: "Pagamentos" },
+  ];
+  document.getElementById("tabs").innerHTML = tabs.map((t) =>
+    `<button class="mc-tab ${state.tab === t.id ? "active" : ""}" data-action="set-tab" data-tab="${t.id}">${t.label}</button>`
+  ).join("");
+}
+
+function renderSyncStatus() {
+  const el = document.getElementById("sync-status");
+  if (!el) return;
+  if (state.saving) el.innerHTML = `<span class="mc-sync-dot saving"></span> A guardar…`;
+  else if (state.syncError) el.innerHTML = `<span class="mc-sync-dot" style="background:var(--mc-danger)"></span> ${escapeHtml(state.syncError)}`;
+  else el.innerHTML = `<span class="mc-sync-dot"></span> Sincronizado`;
+}
+
+function renderToast() {
+  document.getElementById("toast-root").innerHTML = state.toast ? `<div class="mc-toast">${escapeHtml(state.toast)}</div>` : "";
+}
+
+function renderModal() {
+  const root = document.getElementById("modal-root");
+  if (!modal) { root.innerHTML = ""; return; }
+  if (modal.type === "student") root.innerHTML = renderStudentModal();
+  else if (modal.type === "turma") root.innerHTML = renderTurmaModal();
+  else if (modal.type === "enroll") root.innerHTML = renderEnrollModal();
+  else if (modal.type === "confirm") root.innerHTML = renderConfirmModal();
+  const tipoSel = document.getElementById("f-t-tipo");
+  if (tipoSel) tipoSel.addEventListener("change", () => { modal.data.tipo = tipoSel.value; renderModal(); });
+}
+
+function renderContent() {
+  renderShellNav();
+  renderSyncStatus();
+  const el = document.getElementById("content");
+  if (state.tab === "dashboard") el.innerHTML = renderDashboard();
+  else if (state.tab === "alunos") el.innerHTML = renderAlunos();
+  else if (state.tab === "turmas") el.innerHTML = renderTurmas();
+  else if (state.tab === "pagamentos") el.innerHTML = renderPagamentos();
+  attachContentHandlers();
+}
+
+/* ================================================================ */
+/* Render — Dashboard                                                  */
+/* ================================================================ */
+function renderDashboard() {
+  const activeStudents = state.students.filter((s) => s.ativo !== false);
+  const activeTurmas = state.turmas.filter((t) => t.ativo !== false);
+  const curMonth = currentMonthStr();
+  const monthPayments = state.payments.filter((p) => p.mes === curMonth);
+  const revenue = monthPayments.filter((p) => p.estado === "pago").reduce((s, p) => s + Number(p.valor || 0), 0);
+  const pendingTotal = monthPayments.filter((p) => effectiveStatus(p) !== "pago").reduce((s, p) => s + Number(p.valor || 0), 0);
+  const overdue = state.payments.filter((p) => effectiveStatus(p) === "atrasado").sort((a, b) => (a.mes < b.mes ? -1 : 1));
+  const turmasComVagas = activeTurmas.filter((t) => t.tipo === "turma" && t.capacidade)
+    .map((t) => ({ ...t, inscritos: state.students.filter((s) => (s.turmaIds || []).includes(t.id)).length }))
+    .filter((t) => t.inscritos < Number(t.capacidade));
+
+  return `<div class="mc-stack">
+    <div class="mc-stats-grid">
+      <div class="mc-stat-card"><div class="mc-stat-icon" style="background:var(--mc-primary)">👥</div><div><div class="mc-stat-value">${activeStudents.length}</div><div class="mc-stat-label">Alunos ativos</div></div></div>
+      <div class="mc-stat-card"><div class="mc-stat-icon" style="background:var(--mc-secondary)">🎼</div><div><div class="mc-stat-value">${activeTurmas.length}</div><div class="mc-stat-label">Turmas &amp; aulas ativas</div></div></div>
+      <div class="mc-stat-card"><div class="mc-stat-icon" style="background:var(--mc-success)">€</div><div><div class="mc-stat-value">${formatCurrency(revenue)}</div><div class="mc-stat-label">Recebido em ${formatMonth(curMonth)}</div></div></div>
+      <div class="mc-stat-card"><div class="mc-stat-icon" style="background:var(--mc-warning)">⏳</div><div><div class="mc-stat-value">${formatCurrency(pendingTotal)}</div><div class="mc-stat-label">Pendente este mês</div></div></div>
+    </div>
+    <div class="mc-two-col">
+      <div class="mc-card">
+        <h3 class="mc-card-title">⚠️ Pagamentos em atraso</h3>
+        ${overdue.length === 0 ? `<div class="mc-empty"><div style="font-size:24px;">✅</div><p class="mc-empty-title">Tudo em dia</p><p class="mc-empty-hint">Não há pagamentos em atraso.</p></div>` :
+          `<ul class="mc-mini-list">${overdue.slice(0, 8).map((p) => {
+            const st = getStudent(p.alunoId); const tu = getTurma(p.turmaId);
+            return `<li><div><strong>${escapeHtml(st ? st.nome : "Aluno removido")}</strong><span class="mc-mini-sub">${escapeHtml(tu ? tu.nome : "—")} · ${formatMonth(p.mes)}</span></div>
+              <div class="mc-mini-actions"><span class="mc-mini-amount">${formatCurrency(p.valor)}</span><button class="mc-btn mc-btn-small mc-btn-primary" data-action="mark-paid" data-id="${p.id}">Marcar pago</button></div></li>`;
+          }).join("")}</ul>`}
+      </div>
+      <div class="mc-card">
+        <h3 class="mc-card-title">🎼 Turmas com vagas</h3>
+        ${turmasComVagas.length === 0 ? `<div class="mc-empty"><div style="font-size:24px;">🚫</div><p class="mc-empty-title">Sem vagas livres</p><p class="mc-empty-hint">Todas as turmas estão preenchidas ou sem limite definido.</p></div>` :
+          `<ul class="mc-mini-list">${turmasComVagas.map((t) => `<li><div><strong>${escapeHtml(t.nome)}</strong><span class="mc-mini-sub">${escapeHtml(t.diaHora || "Horário a definir")}</span></div><span class="mc-badge" style="color:var(--mc-secondary);background:var(--mc-secondary-bg)">${t.inscritos}/${t.capacidade} vagas</span></li>`).join("")}</ul>`}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ================================================================ */
+/* Render — Alunos                                                    */
+/* ================================================================ */
+function renderAlunos() {
+  return `<div class="mc-stack">
+    <div class="mc-section-header">
+      <div class="mc-search">🔍<input id="student-search" placeholder="Procurar aluno…"></div>
+      <button class="mc-btn mc-btn-primary" data-action="new-student">+ Novo aluno</button>
+    </div>
+    <div id="students-table-wrap">${renderStudentsTable()}</div>
+  </div>`;
+}
+function renderStudentsTable() {
+  if (state.students.length === 0) {
+    return `<div class="mc-empty"><div style="font-size:24px;">🧑‍🎓</div><p class="mc-empty-title">Ainda sem alunos</p><p class="mc-empty-hint">Adicione o primeiro aluno para começar.</p></div>`;
+  }
+  return `<div class="mc-table-wrap"><table class="mc-table">
+    <thead><tr><th>Aluno</th><th>Encarregado</th><th>Contacto</th><th>Turmas / Aulas</th><th>Estado</th><th></th></tr></thead>
+    <tbody>${state.students.map((s) => {
+      const chips = (s.turmaIds || []).map((id) => { const t = getTurma(id); return t ? `<span class="mc-chip">${escapeHtml(t.nome)}</span>` : ""; }).join("");
+      return `<tr data-student-name="${escapeHtml(s.nome.toLowerCase())}">
+        <td><strong>${escapeHtml(s.nome)}</strong></td>
+        <td>${escapeHtml(s.encarregado || "—")}</td>
+        <td>${s.telefone ? `<div>${escapeHtml(s.telefone)}</div>` : ""}${s.email ? `<div class="mc-mini-sub">${escapeHtml(s.email)}</div>` : ""}${!s.telefone && !s.email ? "—" : ""}</td>
+        <td><div class="mc-chip-row">${chips || `<span class="mc-mini-sub">Sem inscrições</span>`}</div></td>
+        <td>${s.ativo === false ? `<span class="mc-badge" style="color:var(--mc-ink-soft);background:var(--mc-border)">Inativo</span>` : `<span class="mc-badge" style="color:var(--mc-success);background:var(--mc-success-bg)">Ativo</span>`}</td>
+        <td><div class="mc-row-actions">
+          <button class="mc-icon-btn" data-action="edit-student" data-id="${s.id}">✏️</button>
+          <button class="mc-icon-btn mc-icon-btn-danger" data-action="delete-student" data-id="${s.id}">🗑️</button>
+        </div></td>
+      </tr>`;
+    }).join("")}</tbody>
+  </table></div>`;
+}
+
+/* ================================================================ */
+/* Render — Turmas & Aulas                                            */
+/* ================================================================ */
+function renderTurmas() {
+  if (state.turmas.length === 0) {
+    return `<div class="mc-stack"><div class="mc-section-header"><h3 class="mc-section-title">Turmas e aulas individuais</h3><button class="mc-btn mc-btn-primary" data-action="new-turma">+ Nova turma/aula</button></div>
+      <div class="mc-empty"><div style="font-size:24px;">🎼</div><p class="mc-empty-title">Ainda sem turmas ou aulas</p><p class="mc-empty-hint">Crie a primeira turma de grupo ou aula individual.</p></div></div>`;
+  }
+  return `<div class="mc-stack">
+    <div class="mc-section-header"><h3 class="mc-section-title">Turmas e aulas individuais</h3><button class="mc-btn mc-btn-primary" data-action="new-turma">+ Nova turma/aula</button></div>
+    <div class="mc-turma-grid">${state.turmas.map((t) => {
+      const inscritos = state.students.filter((s) => (s.turmaIds || []).includes(t.id)).length;
+      const isTurma = t.tipo === "turma";
+      return `<div class="mc-turma-card">
+        <div class="mc-turma-card-top">
+          <span class="mc-badge" style="color:${isTurma ? "var(--mc-secondary)" : "var(--mc-tertiary-ink)"};background:${isTurma ? "var(--mc-secondary-bg)" : "var(--mc-tertiary-bg)"}">${isTurma ? "Turma" : "Aula individual"}</span>
+          ${t.ativo === false ? `<span class="mc-badge" style="color:var(--mc-ink-soft);background:var(--mc-border)">Inativa</span>` : ""}
+        </div>
+        <h4>${escapeHtml(t.nome)}</h4>
+        <div class="mc-turma-meta">
+          ${t.instrumento ? `<span>🎼 ${escapeHtml(t.instrumento)}</span>` : ""}
+          ${t.professor ? `<span>👤 ${escapeHtml(t.professor)}</span>` : ""}
+          ${t.diaHora ? `<span>🗓️ ${escapeHtml(t.diaHora)}</span>` : ""}
+          ${t.local ? `<span>📍 ${escapeHtml(t.local)}</span>` : ""}
+        </div>
+        <div class="mc-turma-bottom">
+          <span class="mc-turma-price">${formatCurrency(t.mensalidade)}<span class="mc-mini-sub">/mês</span></span>
+          <span class="mc-mini-sub">${isTurma && t.capacidade ? `${inscritos}/${t.capacidade} alunos` : `${inscritos} aluno(s)`}</span>
+        </div>
+        <div class="mc-turma-actions">
+          <button class="mc-btn mc-btn-ghost mc-btn-small" data-action="manage-enroll" data-id="${t.id}">👤+ Gerir alunos</button>
+          <button class="mc-icon-btn" data-action="edit-turma" data-id="${t.id}">✏️</button>
+          <button class="mc-icon-btn mc-icon-btn-danger" data-action="delete-turma" data-id="${t.id}">🗑️</button>
+        </div>
+      </div>`;
+    }).join("")}</div>
+  </div>`;
+}
+
+/* ================================================================ */
+/* Render — Pagamentos                                                */
+/* ================================================================ */
+function renderPagamentos() {
+  const monthPayments = state.payments.filter((p) => p.mes === state.selectedMonth);
+  const filtered = monthPayments.filter((p) => effectiveStatus(p) === state.paymentFilter || state.paymentFilter === "todos");
+  const totalEsperado = monthPayments.reduce((s, p) => s + Number(p.valor || 0), 0);
+  const totalRecebido = monthPayments.filter((p) => p.estado === "pago").reduce((s, p) => s + Number(p.valor || 0), 0);
+  const totalPendente = totalEsperado - totalRecebido;
+
+  return `<div class="mc-stack">
+    <div class="mc-card">
+      <div class="mc-payments-controls">
+        <div class="mc-field"><label>Mês</label><input type="month" id="month-select" value="${state.selectedMonth}"></div>
+        <button class="mc-btn mc-btn-primary" data-action="generate-payments">+ Gerar pagamentos do mês</button>
+        <div class="mc-payments-summary">
+          <span>Esperado: <strong>${formatCurrency(totalEsperado)}</strong></span>
+          <span>Recebido: <strong style="color:var(--mc-success)">${formatCurrency(totalRecebido)}</strong></span>
+          <span>Em falta: <strong style="color:var(--mc-warning)">${formatCurrency(totalPendente)}</strong></span>
+        </div>
+      </div>
+    </div>
+    <div class="mc-section-header">
+      <div class="mc-search">🔍<input id="payment-search" placeholder="Procurar aluno…"></div>
+      <select id="payment-filter" class="mc-select-inline">
+        <option value="todos" ${state.paymentFilter === "todos" ? "selected" : ""}>Todos os estados</option>
+        <option value="pago" ${state.paymentFilter === "pago" ? "selected" : ""}>Pagos</option>
+        <option value="pendente" ${state.paymentFilter === "pendente" ? "selected" : ""}>Pendentes</option>
+        <option value="atrasado" ${state.paymentFilter === "atrasado" ? "selected" : ""}>Em atraso</option>
+      </select>
+    </div>
+    <div id="payments-table-wrap">${renderPaymentsTable(filtered, monthPayments)}</div>
+  </div>`;
+}
+function renderPaymentsTable(filtered, monthPayments) {
+  if (filtered.length === 0) {
+    return `<div class="mc-empty"><div style="font-size:24px;">💳</div><p class="mc-empty-title">${monthPayments.length === 0 ? "Sem pagamentos para este mês" : "Nenhum resultado"}</p>
+      <p class="mc-empty-hint">${monthPayments.length === 0 ? 'Use "Gerar pagamentos do mês" para criar os registos a partir das inscrições ativas.' : "Tente outro filtro ou termo de pesquisa."}</p></div>`;
+  }
+  return `<div class="mc-table-wrap"><table class="mc-table">
+    <thead><tr><th>Aluno</th><th>Turma / Aula</th><th>Mês</th><th>Valor</th><th>Estado</th><th>Pago em</th><th></th></tr></thead>
+    <tbody>${filtered.map((p) => {
+      const st = getStudent(p.alunoId); const tu = getTurma(p.turmaId); const status = effectiveStatus(p); const meta = STATUS_META[status];
+      return `<tr data-student-name="${escapeHtml((st ? st.nome : "").toLowerCase())}">
+        <td><strong>${escapeHtml(st ? st.nome : "Aluno removido")}</strong></td>
+        <td>${escapeHtml(tu ? tu.nome : "—")}</td>
+        <td>${formatMonth(p.mes)}</td>
+        <td>${formatCurrency(p.valor)}</td>
+        <td><span class="mc-badge" style="color:${meta.color};background:${meta.bg}">${meta.label}</span></td>
+        <td>${formatDate(p.dataPagamento)}</td>
+        <td><div class="mc-row-actions">
+          ${p.estado === "pago" ? `<button class="mc-btn mc-btn-small mc-btn-ghost" data-action="mark-pending" data-id="${p.id}">Marcar pendente</button>` : `<button class="mc-btn mc-btn-small mc-btn-primary" data-action="mark-paid" data-id="${p.id}">Marcar pago</button>`}
+          <button class="mc-icon-btn mc-icon-btn-danger" data-action="delete-payment" data-id="${p.id}">🗑️</button>
+        </div></td>
+      </tr>`;
+    }).join("")}</tbody>
+  </table></div>`;
+}
+
+/* ================================================================ */
+/* Render — Modais                                                    */
+/* ================================================================ */
+function renderStudentModal() {
+  const f = modal.data;
+  const checklist = state.turmas.length === 0
+    ? `<span class="mc-mini-sub">Ainda não existem turmas criadas.</span>`
+    : state.turmas.map((t) => `<label class="mc-checkitem"><input type="checkbox" data-turma-checkbox data-turma-id="${t.id}" ${ (f.turmaIds || []).includes(t.id) ? "checked" : "" }> ${escapeHtml(t.nome)}</label>`).join("");
+  return `<div class="mc-modal-overlay" data-action="overlay-close"><div class="mc-modal" onclick="event.stopPropagation()">
+    <div class="mc-modal-header"><h3>${modal.editId ? "Editar aluno" : "Novo aluno"}</h3><button class="mc-icon-btn" data-action="close-modal">✕</button></div>
+    <div class="mc-modal-body">
+      ${modal.error ? `<div class="mc-form-error">${escapeHtml(modal.error)}</div>` : ""}
+      <div class="mc-form-grid">
+        <div class="mc-field mc-field-wide"><label>Nome do aluno *</label><input id="f-nome" value="${escapeHtml(f.nome)}" placeholder="Nome completo"></div>
+        <div class="mc-field"><label>Data de nascimento</label><input type="date" id="f-dataNascimento" value="${escapeHtml(f.dataNascimento)}"></div>
+        <div class="mc-field"><label>Encarregado de educação</label><input id="f-encarregado" value="${escapeHtml(f.encarregado)}"></div>
+        <div class="mc-field"><label>Telefone</label><input id="f-telefone" value="${escapeHtml(f.telefone)}"></div>
+        <div class="mc-field"><label>Email</label><input type="email" id="f-email" value="${escapeHtml(f.email)}"></div>
+        <div class="mc-field mc-field-wide"><label>Notas</label><textarea id="f-notas" rows="2">${escapeHtml(f.notas)}</textarea></div>
+        <div class="mc-field mc-field-wide"><label>Turmas / aulas inscritas</label><div class="mc-checklist">${checklist}</div></div>
+        <label class="mc-checkitem mc-field-wide"><input type="checkbox" id="f-ativo" ${f.ativo !== false ? "checked" : ""}> Aluno ativo</label>
+      </div>
+      <div class="mc-form-actions"><button class="mc-btn mc-btn-primary" data-action="save-student">Guardar</button></div>
+    </div>
+  </div></div>`;
+}
+function renderTurmaModal() {
+  const f = modal.data;
+  const isTurma = f.tipo === "turma";
+  return `<div class="mc-modal-overlay" data-action="overlay-close"><div class="mc-modal" onclick="event.stopPropagation()">
+    <div class="mc-modal-header"><h3>${modal.editId ? "Editar turma/aula" : "Nova turma/aula"}</h3><button class="mc-icon-btn" data-action="close-modal">✕</button></div>
+    <div class="mc-modal-body">
+      ${modal.error ? `<div class="mc-form-error">${escapeHtml(modal.error)}</div>` : ""}
+      <div class="mc-form-grid">
+        <div class="mc-field mc-field-wide"><label>Nome *</label><input id="f-t-nome" value="${escapeHtml(f.nome)}" placeholder="Ex: Turma de Iniciação Musical · Terças"></div>
+        <div class="mc-field"><label>Tipo</label><select id="f-t-tipo"><option value="turma" ${isTurma ? "selected" : ""}>Turma (grupo)</option><option value="individual" ${!isTurma ? "selected" : ""}>Aula individual</option></select></div>
+        <div class="mc-field"><label>Instrumento / foco</label><input id="f-t-instrumento" value="${escapeHtml(f.instrumento)}"></div>
+        <div class="mc-field"><label>Professor(a)</label><input id="f-t-professor" value="${escapeHtml(f.professor)}"></div>
+        <div class="mc-field"><label>Dia / Hora</label><input id="f-t-diaHora" value="${escapeHtml(f.diaHora)}" placeholder="Ex: Terça, 17h00"></div>
+        <div class="mc-field"><label>Local</label><input id="f-t-local" value="${escapeHtml(f.local)}"></div>
+        <div class="mc-field"><label>Mensalidade (€)</label><input type="number" min="0" step="0.01" id="f-t-mensalidade" value="${escapeHtml(f.mensalidade)}"></div>
+        ${isTurma ? `<div class="mc-field"><label>Capacidade máxima</label><input type="number" min="1" step="1" id="f-t-capacidade" value="${escapeHtml(f.capacidade)}" placeholder="Opcional"></div>` : ""}
+        <label class="mc-checkitem mc-field-wide"><input type="checkbox" id="f-t-ativo" ${f.ativo !== false ? "checked" : ""}> Turma/aula ativa</label>
+      </div>
+      <div class="mc-form-actions"><button class="mc-btn mc-btn-primary" data-action="save-turma">Guardar</button></div>
+    </div>
+  </div></div>`;
+}
+function renderEnrollModal() {
+  const turma = getTurma(modal.turmaId);
+  if (!turma) return "";
+  const isTurma = turma.tipo === "turma";
+  const inscritos = state.students.filter((s) => (s.turmaIds || []).includes(turma.id)).length;
+  const full = isTurma && turma.capacidade && inscritos >= Number(turma.capacidade);
+  const list = state.students.length === 0
+    ? `<div class="mc-empty"><p class="mc-empty-title">Ainda sem alunos registados</p></div>`
+    : `<div class="mc-checklist mc-checklist-tall">${state.students.map((s) => {
+        const checked = (s.turmaIds || []).includes(turma.id);
+        const disabled = !checked && full;
+        return `<label class="mc-checkitem ${disabled ? "mc-checkitem-disabled" : ""}"><input type="checkbox" data-action="toggle-enroll" data-student-id="${s.id}" data-turma-id="${turma.id}" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}> ${escapeHtml(s.nome)}${disabled ? ` <span class="mc-mini-sub">(turma cheia)</span>` : ""}</label>`;
+      }).join("")}</div>`;
+  return `<div class="mc-modal-overlay" data-action="overlay-close"><div class="mc-modal mc-modal-wide" onclick="event.stopPropagation()">
+    <div class="mc-modal-header"><h3>Gerir alunos — ${escapeHtml(turma.nome)}</h3><button class="mc-icon-btn" data-action="close-modal">✕</button></div>
+    <div class="mc-modal-body">${isTurma && turma.capacidade ? `<p class="mc-mini-sub" style="margin-bottom:12px;">${inscritos}/${turma.capacidade} vagas ocupadas</p>` : ""}${list}</div>
+  </div></div>`;
+}
+function renderConfirmModal() {
+  return `<div class="mc-modal-overlay" data-action="overlay-close"><div class="mc-modal mc-modal-small" onclick="event.stopPropagation()">
+    <div class="mc-modal-body mc-confirm-body"><div style="font-size:26px;">⚠️</div><p>${escapeHtml(pendingDelete ? pendingDelete.label : "")}</p>
+      <div class="mc-form-actions"><button class="mc-btn mc-btn-ghost" data-action="close-modal">Cancelar</button><button class="mc-btn mc-btn-danger" data-action="confirm-delete-yes">Eliminar</button></div>
+    </div>
+  </div></div>`;
+}
+
+/* ================================================================ */
+/* Event delegation                                                   */
+/* ================================================================ */
+function attachAppHandlers() {
+  const app = document.getElementById("app");
+  app.addEventListener("click", handleClick);
+  app.addEventListener("change", handleChange);
+}
+function handleClick(e) {
+  const t = e.target.closest("[data-action]");
+  if (!t) return;
+  const action = t.dataset.action;
+  const id = t.dataset.id;
+  if (action === "set-tab") setTab(t.dataset.tab);
+  else if (action === "sign-out") doSignOut();
+  else if (action === "export-excel") exportToExcel();
+  else if (action === "new-student") openStudentModal(null);
+  else if (action === "edit-student") openStudentModal(id);
+  else if (action === "delete-student") { const s = getStudent(id); askConfirmDelete("student", id, `Eliminar o aluno "${s.nome}"? Esta ação não pode ser revertida.`); }
+  else if (action === "new-turma") openTurmaModal(null);
+  else if (action === "edit-turma") openTurmaModal(id);
+  else if (action === "delete-turma") { const tu = getTurma(id); askConfirmDelete("turma", id, `Eliminar "${tu.nome}"? Os pagamentos já registados mantêm-se no histórico.`); }
+  else if (action === "manage-enroll") openEnrollModal(id);
+  else if (action === "close-modal" || action === "overlay-close") closeModal();
+  else if (action === "save-student") saveStudentFromForm();
+  else if (action === "save-turma") saveTurmaFromForm();
+  else if (action === "generate-payments") generatePayments();
+  else if (action === "mark-paid") markPaid(id);
+  else if (action === "mark-pending") markPending(id);
+  else if (action === "delete-payment") askConfirmDelete("payment", id, "Eliminar este registo de pagamento?");
+  else if (action === "confirm-delete-yes") performConfirmedDelete();
+}
+function handleChange(e) {
+  if (e.target.id === "month-select") { state.selectedMonth = e.target.value; renderContent(); }
+  else if (e.target.id === "payment-filter") { state.paymentFilter = e.target.value; renderContent(); }
+  else if (e.target.dataset && e.target.dataset.action === "toggle-enroll") { toggleEnrollment(e.target.dataset.studentId, e.target.dataset.turmaId); }
+}
+function attachContentHandlers() {
+  const studentSearch = document.getElementById("student-search");
+  if (studentSearch) studentSearch.addEventListener("input", (e) => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll("#students-table-wrap tr[data-student-name]").forEach((row) => {
+      row.classList.toggle("mc-row-hidden", !row.dataset.studentName.includes(q));
+    });
+  });
+  const paymentSearch = document.getElementById("payment-search");
+  if (paymentSearch) paymentSearch.addEventListener("input", (e) => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll("#payments-table-wrap tr[data-student-name]").forEach((row) => {
+      row.classList.toggle("mc-row-hidden", !row.dataset.studentName.includes(q));
+    });
+  });
+}
+
+/* ================================================================ */
+/* Arranque                                                            */
+/* ================================================================ */
+renderApp();
+</script>
+</body>
+</html>
