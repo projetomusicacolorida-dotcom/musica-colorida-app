@@ -821,7 +821,7 @@ function renderStudentModal() {
   const checklist = state.turmas.length === 0
     ? `<span class="mc-mini-sub">Ainda não existem turmas criadas.</span>`
     : state.turmas.map((t) => `<label class="mc-checkitem"><input type="checkbox" data-turma-checkbox data-turma-id="${t.id}" ${ (f.turmaIds || []).includes(t.id) ? "checked" : "" }> ${escapeHtml(t.nome)}</label>`).join("");
-  return `<div class="mc-modal-overlay" data-action="overlay-close"><div class="mc-modal" onclick="event.stopPropagation()">
+  return `<div class="mc-modal-overlay" data-action="overlay-close"><div class="mc-modal"> 
     <div class="mc-modal-header"><h3>${modal.editId ? "Editar aluno" : "Novo aluno"}</h3><button class="mc-icon-btn" data-action="close-modal">✕</button></div>
     <div class="mc-modal-body">
       ${modal.error ? `<div class="mc-form-error">${escapeHtml(modal.error)}</div>` : ""}
@@ -842,7 +842,7 @@ function renderStudentModal() {
 function renderTurmaModal() {
   const f = modal.data;
   const isTurma = f.tipo === "turma";
-  return `<div class="mc-modal-overlay" data-action="overlay-close"><div class="mc-modal" onclick="event.stopPropagation()">
+  return `<div class="mc-modal-overlay" data-action="overlay-close"><div class="mc-modal" >
     <div class="mc-modal-header"><h3>${modal.editId ? "Editar turma/aula" : "Nova turma/aula"}</h3><button class="mc-icon-btn" data-action="close-modal">✕</button></div>
     <div class="mc-modal-body">
       ${modal.error ? `<div class="mc-form-error">${escapeHtml(modal.error)}</div>` : ""}
@@ -874,13 +874,13 @@ function renderEnrollModal() {
         const disabled = !checked && full;
         return `<label class="mc-checkitem ${disabled ? "mc-checkitem-disabled" : ""}"><input type="checkbox" data-action="toggle-enroll" data-student-id="${s.id}" data-turma-id="${turma.id}" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}> ${escapeHtml(s.nome)}${disabled ? ` <span class="mc-mini-sub">(turma cheia)</span>` : ""}</label>`;
       }).join("")}</div>`;
-  return `<div class="mc-modal-overlay" data-action="overlay-close"><div class="mc-modal mc-modal-wide" onclick="event.stopPropagation()">
+  return `<div class="mc-modal-overlay" data-action="overlay-close"><div class="mc-modal mc-modal-wide">
     <div class="mc-modal-header"><h3>Gerir alunos — ${escapeHtml(turma.nome)}</h3><button class="mc-icon-btn" data-action="close-modal">✕</button></div>
     <div class="mc-modal-body">${isTurma && turma.capacidade ? `<p class="mc-mini-sub" style="margin-bottom:12px;">${inscritos}/${turma.capacidade} vagas ocupadas</p>` : ""}${list}</div>
   </div></div>`;
 }
 function renderConfirmModal() {
-  return `<div class="mc-modal-overlay" data-action="overlay-close"><div class="mc-modal mc-modal-small" onclick="event.stopPropagation()">
+  return `<div class="mc-modal-overlay" data-action="overlay-close"><div class="mc-modal mc-modal-small" >
     <div class="mc-modal-body mc-confirm-body"><div style="font-size:26px;">⚠️</div><p>${escapeHtml(pendingDelete ? pendingDelete.label : "")}</p>
       <div class="mc-form-actions"><button class="mc-btn mc-btn-ghost" data-action="close-modal">Cancelar</button><button class="mc-btn mc-btn-danger" data-action="confirm-delete-yes">Eliminar</button></div>
     </div>
